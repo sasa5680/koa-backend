@@ -1,0 +1,27 @@
+{
+  "name": "koa",
+  "version": "1.0.0",
+  "description": "koa",
+  "main": "index.js",
+  "scripts": {
+    "start": "NODE_ENV=production node src",
+    "start:dev": "cross-env NODE_ENV=development NODE_PATH=src nodemon --watch src/ src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@koa/cors": "^3.3.0",
+    "aws-sdk": "^2.1142.0",
+    "axios": "^0.27.2",
+    "dotenv": "^16.0.1",
+    "joi": "^17.6.0",
+    "jsonwebtoken": "^8.5.1",
+    "koa": "^2.13.4",
+    "koa-body": "^5.0.0",
+    "koa-bodyparser": "^4.3.0",
+    "koa-router": "^10.1.1",
+    "mongoose": "^6.3.4",
+    "mongoose-sequence": "^5.3.1"
+  }
+}

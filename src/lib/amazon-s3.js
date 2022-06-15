@@ -6,6 +6,8 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.SECRETACCESSKEY, // 사용자의 secretAccessKey
 });
 
+console.log(process.env.ACCESSKEYID);
+
 const bucket_name = "jsks3test"; // 생성한 버킷 이름
 
 //file은 멀티파트 파일을 받아온다.

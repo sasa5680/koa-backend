@@ -7,7 +7,6 @@ const {
 
 const Post = require("../../models/post");
 
-
 //포스트 모두 가져오기
 exports.list = async (ctx) => {
 
@@ -50,16 +49,14 @@ exports.readPageAndQuery = async (ctx) => {
 
         const content = res.content.map((post, index) => {
             return {
-              postNum: post.postId,
-              postId: post._id,
-              profile: post.user.profile,
-              title: post.title,
-              content: post.content,
-              //image: post.image,
-              //reply: post.reply,
-              createdAt: post.createdAt,
-              view: post.view,
-              like: post.like.length,
+                postNum: post.postId,
+                postId: post._id,
+                profile: post.user.profile,
+                title: post.title,
+                content: post.content,
+                createdAt: post.createdAt,
+                view: post.view,
+                like: post.like.length,
             };
         });
 
@@ -83,7 +80,9 @@ exports.readPageAndUser = async (ctx) => {
         size
     } = ctx.request.query;
 
-    const { userId } = ctx.params;
+    const {
+        userId
+    } = ctx.params;
 
     try {
         let res = await Post.findByPageAndUser(userId, page, size);
@@ -161,7 +160,6 @@ exports.read = async (ctx) => {
     let post = null;
 
     try {
-
         post = await Post.findBypostNum(id);
     } catch (error) {
         console.log(error)
@@ -224,7 +222,6 @@ exports.create = async (ctx) => {
 
     let post = null;
 
-
     let files = [];
     //파일이 하나만 들어오면 객체로 들어오고, 2개 이상이면 배열로 들어온다.
     if (ctx.request.files.fileList instanceof Array) {
@@ -251,33 +248,141 @@ exports.create = async (ctx) => {
     };
 }
 
-//포스트 삭제
-exports.delete = async (ctx) => {
-
+//포스트 수정
+exports.update = async (ctx) => {
     //로그인 검사
-    // const {
-    //     user
-    // } = ctx.request;
-    // if (user === null) ctx.status = 403;
+    const {
+        user
+    } = ctx.request;
+    if (!user) {
+        ctx.status = 403;
+        return;
+    }
 
     const {
         id
     } = ctx.params;
 
-    console.log(id);
+    console.log(id)
+    //권한 검사
+    try {
+        const isOwner = await Post.isOwner(id, user._id);
+        if (!isOwner) {
+            ctx.status = 403;
+            return;
+        }
+    } catch (error) {
+        ctx.status = 500;
+        return;
+    }
+
+    let files = [];
+    //파일이 하나만 들어오면 객체로 들어오고, 2개 이상이면 배열로 들어온다.
+    if (ctx.request.files.fileList instanceof Array) {
+        files = [...ctx.request.files.fileList];
+    } else if (ctx.request.files.fileList === undefined) {
+        files = [];
+    } else {
+        files = [ctx.request.files.fileList];
+    }
+
+    let imageDelete = [];
+    //파일이 하나만 들어오면 객체로 들어오고, 2개 이상이면 배열로 들어온다.
+    if (ctx.request.body.imageDelete instanceof Array) {
+        imageDelete = [...ctx.request.body.imageDelete];
+    } else if (ctx.request.body.imageDelete === undefined) {
+        imageDelete = [];
+    } else {
+        imageDelete = [ctx.request.body.imageDelete];
+    }
+
+    let post = null;
 
     try {
+        post = await Post.updatePost({
+            title: ctx.request.body.title,
+            content: ctx.request.body.content,
+            postId: ctx.request.body.postId,
+            files: files,
+            imageDelete: imageDelete,
+        });
+    } catch (e) {
+        ctx.throw(500, e);
+    }
 
-        const res = await Post.deletePost(id);
+    ctx.body = {
+        data: "data",
+    };
+}
 
+//포스트 삭제
+exports.delete = async (ctx) => {
+    //로그인 검사
+    const {
+        user
+    } = ctx.request;
+    if (user === null) ctx.status = 403;
+
+    const {
+        id
+    } = ctx.params;
+
+    //권한 검사
+    try {
+        const isOwner = await Post.isOwner(id, user._id);
+        if (!isOwner) {
+            ctx.status = 403;
+            return;
+        }
     } catch (error) {
+        console.log(error);
+        ctx.status = 500;
+        return;
+    }
 
-        console.log(error)
-
+    try {
+        const res = await Post.deletePost(id);
+    } catch (error) {
+        console.log(error);
     }
 
     ctx.status = 200;
+}
 
+//포스트 이미지 삭제
+exports.deletePostImage = async (ctx) => {
+    //로그인 검사
+    const {
+        user
+    } = ctx.request;
+    if (user === null) ctx.status = 403;
+
+    const {
+        id,
+        filename
+    } = ctx.params;
+
+    //권한 검사
+    try {
+        console.log(id, user._id);
+        const isOwner = await Post.isOwner(id, user._id);
+        if (!isOwner) {
+            ctx.status = 403;
+            return;
+        }
+    } catch (error) {
+        ctx.status = 500;
+        return;
+    }
+
+    try {
+        const res = await Post.deleteImage(id, filename);
+        ctx.status = 200;
+
+    } catch (error) {
+        ctx.status = 500;
+        console.log(error);
+    }
 }
 
 //댓글 생성
@@ -293,7 +398,6 @@ exports.createReply = async (ctx) => {
     const {
         content
     } = ctx.request.body;
-    console.log(user);
 
     if (user === undefined || user === null) {
         ctx.status = 403;
@@ -316,10 +420,28 @@ exports.deleteReply = async (ctx) => {
         user
     } = ctx.request;
 
+    if (user === undefined || user === null) {
+        ctx.status = 403;
+        return;
+    }
+
     const {
         id,
         replyId
     } = ctx.params;
+
+    //소유자 검사
+    //권한 검사
+    try {
+        const isOwner = await Post.isReplyOwner(id, replyId, user._id);
+        if (!isOwner) {
+            ctx.status = 403;
+            return;
+        }
+    } catch (error) {
+        ctx.status = 500;
+        return;
+    }
 
     try {
         res = await Post.deleteReply(replyId, id, 111);

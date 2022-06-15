@@ -61,10 +61,33 @@ const Post = new Schema({
   like: [] // 좋아요 누른 유저들
 });
 
-
 autoIdSetter(Post, mongoose, "post", "postId");
 autoIdSetter(Image, mongoose, "postImage", "imageId");
 autoIdSetter(Reply, mongoose, "postReply", "replyId");
+
+//게시물의 주인인지 검사
+Post.statics.isOwner = async function (
+  postId,
+  userId
+) {
+  const isOwner = await this.exists({
+      postId: postId,
+      "user": userId,
+    })
+    .exec();
+
+  return isOwner;
+}
+
+//댓글 주인인지 검사
+Post.statics.isReplyOwner = async function (postId, replyId, userId) {
+  const isOwner = await this.exists({
+    postId: postId,
+    reply: { $elemMatch: {_id: replyId, "user": userId}}
+  }).exec();
+
+  return isOwner;
+};
 
 //게시물 생성
 Post.statics.createPost = async function ({
@@ -88,6 +111,28 @@ Post.statics.createPost = async function ({
   return post.save();
 };
 
+Post.statics.updatePost = async function ({
+  title,
+  content,
+  files,
+  postId,
+}) {
+  const post = await this.findOne({
+    _id: postId,
+  }).exec();
+
+  let postImage = post.image;
+  //새 이미지들 업로드
+  let images = await s3.uploadPostImage(files);
+
+  postImage = postImage.concat(images);
+  post.title = title;
+  post.content = content;
+  post.image = postImage;
+
+  return post.save();
+};
+
 //게시물 삭제
 Post.statics.deletePost = async function (
   postnum
@@ -105,6 +150,24 @@ Post.statics.deletePost = async function (
 
   //post 삭제
   await post.remove().exec();
+}
+
+Post.statics.deleteImage = async function (postId, filename) {
+
+  try {
+    await s3.deletePostImage(filename);
+    const post = await this.findOneAndUpdate({
+      postId: postId
+    }, {
+      $pull: {
+        image: {
+          filename: filename
+        },
+      },
+    }).exec();
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 //전부 가져오기
@@ -151,6 +214,9 @@ Post.statics.findByPage = async function (page, size) {
     .skip((page - 1) * size)
     .limit(size)
     .populate("user")
+    .sort({
+      postId: -1
+    })
     .exec();
 
   return {
@@ -179,13 +245,17 @@ Post.statics.findByPageAndUser = async function (userId, page, size) {
 
   //페이지에 해당하는 게시물들을 가져온다.
   const posts = await this.find({
-      "user": userId
+      user: userId,
     })
     .skip((page - 1) * size)
     .limit(size)
+    .sort({
+      postId: -1
+    })
+
     //.populate("user")
     .exec();
-  
+
   return {
     content: posts,
     last: isLast,
@@ -198,8 +268,6 @@ Post.statics.findByPageAndUser = async function (userId, page, size) {
 Post.statics.findByPageAndQuery = async function (query, page, size) {
   if (page <= 0) throw error("페이지는 0이상이어야 합니다.");
   if (size <= 0) throw error("요소의 크기는 0이상이어야 합니다.");
-
-  console.log(query)
 
   const regex = new RegExp(query, 'i'); // i for case insensitive
 
@@ -236,11 +304,13 @@ Post.statics.findByPageAndQuery = async function (query, page, size) {
         },
       ],
     })
+    .sort({
+      postId: -1
+    })
     .skip((page - 1) * size)
     .limit(size)
     .populate("user")
     .exec();
-
 
   return {
     content: posts,
@@ -249,7 +319,6 @@ Post.statics.findByPageAndQuery = async function (query, page, size) {
     page: page,
   };
 };
-
 
 //댓글 생성
 Post.statics.createReply = async function (postId, userId, content) {
@@ -268,8 +337,6 @@ Post.statics.createReply = async function (postId, userId, content) {
 
 //댓글 삭제
 Post.statics.deleteReply = async function (replyId, postnum, userId) {
-  console.log(replyId);
-  console.log(postnum);
 
   await this.findOneAndUpdate({
     postId: postnum,

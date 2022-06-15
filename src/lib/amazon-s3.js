@@ -2,8 +2,8 @@ var AWS = require("aws-sdk");
 const fs = require("fs");
 
 const s3 = new AWS.S3({
-  accessKeyId: "AKIAZDM64FMQNSX6TMIA", // 사용자의 AccessKey
-  secretAccessKey: "rYQPMpzjyX17P6JQXPWmh8gc0fa87C4EbGYINKY+", // 사용자의 secretAccessKey
+  accessKeyId: process.env.ACCESSKEYID, // 사용자의 AccessKey
+  secretAccessKey: process.env.SECRETACCESSKEY, // 사용자의 secretAccessKey
 });
 
 const bucket_name = "jsks3test"; // 생성한 버킷 이름
@@ -74,7 +74,7 @@ const updateThumbNailImage = async (newfile, src) => {
     src = src.substring(string.length);
     const params = {
       Bucket: bucket_name,
-      Key: fileName, // file name that you want to save in s3 bucket
+      Key: src, // file name that you want to save in s3 bucket
     };
 
     await s3.deleteObject(params).promise();

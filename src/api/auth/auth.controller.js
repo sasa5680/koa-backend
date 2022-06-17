@@ -20,6 +20,7 @@ exports.localRegister = async (ctx) => {
     password: Joi.string().required().min(6),
     confirm: Joi.string().required().valid(Joi.ref("password")),
     intro: Joi.string(),
+    thumbnail: Joi.any(),
   });
 
   console.log(ctx.request.body);
@@ -70,20 +71,21 @@ exports.localRegister = async (ctx) => {
 
 // 로컬 로그인
 exports.localLogin = async (ctx) => {
-  // 데이터 검증
-  // const schema = Joi.object().keys({
-  //     email: Joi.string().email().required(),
-  //     password: Joi.string().required(),
-  // });
+  
+  //데이터 검증
+  const schema = Joi.object().keys({
+      email: Joi.string().email().required(),
+      password: Joi.string().required(),
+  });
 
-  // console.log(ctx.request.body);
+  console.log(ctx.request.body);
 
-  // const result = schema.validate(ctx.request.body);
+  const result = schema.validate(ctx.request.body);
 
-  // if (result.error) {
-  //     ctx.status = 400; // Bad Request
-  //     return;
-  // }
+  if (result.error) {
+      ctx.status = 400; // Bad Request
+      return;
+  }
 
   const {
     email,

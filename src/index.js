@@ -1,5 +1,6 @@
 const path = require("path");
 const dotenv = require("dotenv");
+const serve = require("koa-static");
 
 if (process.env.NODE_ENV === "production") {
   dotenv.config({ path: path.join(__dirname, ".env.production") });
@@ -39,14 +40,18 @@ mongoose
 
 const port = process.env.PORT || 4000; // PORT 값이 설정되어있지 않다면 4000 을 사용합니다.
 
-//app.use(bodyParser()); // 바디파서 적용, 라우터 적용코드보다 상단에 있어야합니다.
+console.log(path.join(__dirname, "/static"));
 
+app.use(serve(path.join(__dirname, "/static")));
+
+//멀티파트 데이터 허용
 app.use(
   koaBody({
     multipart: true,
   })
 );
 
+//jwt 미들웨어 적용
 app.use(jwtMiddleware);
 
 const koaOptions = {

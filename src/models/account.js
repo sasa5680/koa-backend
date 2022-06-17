@@ -150,14 +150,18 @@ Account.statics.localRegister = async function ({
   password,
   thumbnail,
 }) {
+
+  console.log(thumbnail);
   // 데이터를 생성 할 때는 new this() 를 사용합니다.
 
   let src = process.env.DEFAULT_THUMBNAIL;
 
-  if (!(thumbnail === null)) {
-    const res = await s3.uploadThumbNailImage(thumbnail)
+  if (!(thumbnail === null || thumbnail === undefined)) {
+    const res = await s3.uploadThumbNailImage(thumbnail);
     src = res.Location;
   }
+
+  console.log(src);
   const account = new this({
     profile: {
       username,
@@ -173,13 +177,9 @@ Account.statics.localRegister = async function ({
 
 Account.statics.socialLogin = async function ({email, name}) {
 
-  console.log(email);
-
   const user = await this.findOne({
     email,
   }).exec();
-
-  console.log(user)
 
   if (user === null || user === undefined) {
 
@@ -195,14 +195,9 @@ Account.statics.socialLogin = async function ({email, name}) {
     });
 
     return account.save();
-
-
   } else {
-
     return user;
-
   }
-
 }
 
 Account.statics.updateUser = async function (username, body, thumbnail) {

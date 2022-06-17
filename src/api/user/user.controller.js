@@ -54,7 +54,7 @@ exports.update = async (ctx) => {
     username
   } = ctx.params;
 
-  if (user.username !== username) {
+  if (user.profile.username !== username) {
     ctx.status = 403;
     return;
   }
@@ -63,7 +63,7 @@ exports.update = async (ctx) => {
 
   try {
 
-    await Account.updateUser(user.username, ctx.request.body, file);
+    await Account.updateUser(username, ctx.request.body, file);
     ctx.status = 201;
 
   } catch (error) {

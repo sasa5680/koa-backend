@@ -41,6 +41,12 @@ exports.delete = async (ctx) => {
     return;
   }
 
+  //댓글들 삭제
+  
+  //게시물들 삭제
+
+
+
 }
 
 //유저 업데이트

@@ -452,7 +452,6 @@ exports.deleteReply = async (ctx) => {
     }
 }
 
-
 //좋아요
 exports.likePost = async (ctx) => {
     //로그인 검사

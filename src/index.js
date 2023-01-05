@@ -40,8 +40,6 @@ mongoose
 
 const port = process.env.PORT || 4000; // PORT 값이 설정되어있지 않다면 4000 을 사용합니다.
 
-console.log(path.join(__dirname, "/static"));
-
 app.use(serve(path.join(__dirname, "/static")));
 
 //멀티파트 데이터 허용

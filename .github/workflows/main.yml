@@ -1,1 +1,32 @@
 
+name: Deploy
+
+on:
+  push:
+    branches:
+      - master
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      #깃허브에서 파일 가져온다.
+      - uses: actions/checkout@v2
+
+      #env 파일에 api 키 추가
+      - name: 'Create env file'
+        run: |
+          echo ACCESSKEYID = ${{secrets.GOOGLE_LOGIN_API_KEY}} >> .env.production
+          echo SECRETACCESSKEY = ${{secrets.GOOGLE_LOGIN_API_KEY}} >> .env.production
+          echo MONGO_URI = ${{secrets.GOOGLE_LOGIN_API_KEY}}
+      - name: 'print env'
+        run: |
+          cat .env.production
+
+      #heroku 배포
+      - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "koaboard" #Must be unique in Heroku
+          heroku_email: "sasa5680@naver.com"
